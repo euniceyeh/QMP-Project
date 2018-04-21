@@ -1,0 +1,56 @@
+---
+title: "boxplots"
+author: "Eunice Yeh"
+date: "April 21, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Import RMP dataset and subset
+- use derived dataset of RMP abundances for the two participants of interest (different health states)
+- subset to the two specific bacteria of interest: Prevotella and E.coli (Escherichia)
+- create a column to group/distinguish the two participants (health states)
+
+```{r import-subset}
+RMP <- read.table(file = "../data/derived/transposed_data_subset.tsv", sep = '\t', header = TRUE) %>% 
+  select(X, Prevotella = ends_with("g__Prevotella"), Ecoli = ends_with("g__Escherichia")) %>%
+  mutate(Diagnosis = c(rep("Control",22),rep("CD",22))) # the first 22 samples are for H4023 (control), rest are for H4015 (CD)
+head(RMP, 44)
+```
+
+## Import QMP dataset and subset
+- use derived dataset of QMP abundances (that has been calculated in a separate program)
+- subset to the same two specific bacteria of interest
+- again, create the grouping variable for the diagnosis
+
+
+## Boxplot by health state for each bacteria in RMP vs. QMP
+
+- first in RMP
+
+```{r boxplots}
+# prevotella
+RMP %>% group_by(Diagnosis) %>% ggplot(aes(Diagnosis,Prevotella, fill=Diagnosis), group=disease) + 
+  geom_boxplot() + geom_jitter(width = 0.02) + 
+  scale_y_continuous(trans = "log10") + ylab("Relative Prevotella Abundance (RMP)") +
+  theme_bw() + theme(legend.position="none")
+# e. coli
+RMP %>% group_by(Diagnosis) %>% ggplot(aes(Diagnosis,Ecoli, fill=Diagnosis), group=disease) + 
+  geom_boxplot() + geom_jitter(width = 0.02) + 
+  scale_y_continuous(trans = "log10") + ylab("Relative E. coli Abundance (RMP)") +
+  theme_bw() + theme(legend.position="none")
+```
+
+- then in QMP
+
+```{r boxplots}
+# prevotella
+
+# e. coli
+
+```
+
