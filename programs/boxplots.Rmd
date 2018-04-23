@@ -12,12 +12,13 @@ library(tidyverse)
 
 ## Import RMP dataset and subset
 - use derived dataset of RMP abundances for the two participants of interest (different health states)
-- subset to the two specific bacteria of interest: Prevotella and E.coli (Escherichia)
+- subset to the two specific bacteria of interest: Prevotella copri and Escherichia coli (E.coli) -- both at the genus and species level
 - create a column to group/distinguish the two participants (health states)
 
 ```{r import-subset}
-RMP <- read.table(file = "../data/derived/transposed_data_subset.tsv", sep = '\t', header = TRUE) %>% 
-  select(X, Prevotella = ends_with("g__Prevotella"), Ecoli = ends_with("g__Escherichia")) %>%
+RMP <- read.table(file = "../data/derived/transposed_data_subset_genus_or_species_level.tsv", sep = '\t', header = TRUE) %>% 
+  select(X, Prevotella = ends_with("g__Prevotella"), Escherichia = ends_with("g__Escherichia"),     # genus level
+            P_copri = ends_with("s__Prevotella_copri"), E_coli = ends_with("s__Escherichia_coli")) %>% # species level
   mutate(Diagnosis = c(rep("Control",22),rep("CD",22))) # the first 22 samples are for H4023 (control), rest are for H4015 (CD)
 head(RMP, 44)
 ```
@@ -33,24 +34,47 @@ head(RMP, 44)
 - first in RMP
 
 ```{r boxplots}
-# prevotella
-RMP %>% group_by(Diagnosis) %>% ggplot(aes(Diagnosis,Prevotella, fill=Diagnosis), group=disease) + 
+# prevotella RMP
+# genus level
+RMP %>% ggplot(aes(Diagnosis, Prevotella, fill=Diagnosis), group=Diagnosis) + 
   geom_boxplot() + geom_jitter(width = 0.02) + 
-  scale_y_continuous(trans = "log10") + ylab("Relative Prevotella Abundance (RMP)") +
-  theme_bw() + theme(legend.position="none")
-# e. coli
-RMP %>% group_by(Diagnosis) %>% ggplot(aes(Diagnosis,Ecoli, fill=Diagnosis), group=disease) + 
+  scale_y_continuous(trans = "log10") + 
+  ylab("Relative Genus Abundance (RMP)") +
+  theme_bw() + theme(legend.position="none") +
+  ggtitle("Prevotella")
+# species level
+RMP %>% ggplot(aes(Diagnosis, P_copri, fill=Diagnosis), group=Diagnosis) + 
   geom_boxplot() + geom_jitter(width = 0.02) + 
-  scale_y_continuous(trans = "log10") + ylab("Relative E. coli Abundance (RMP)") +
-  theme_bw() + theme(legend.position="none")
+  scale_y_continuous(trans = "log10") + 
+  ylab("Relative Species Abundance (RMP)") +
+  theme_bw() + theme(legend.position="none") +
+  ggtitle("Prevotella copri")
+```
+
+```{r}
+# e. coli RMP
+# genus level
+RMP %>% ggplot(aes(Diagnosis, Escherichia, fill=Diagnosis), group=Diagnosis) + 
+  geom_boxplot() + geom_jitter(width = 0.02) + 
+  scale_y_continuous(trans = "log10") + 
+  ylab("Relative Genus Abundance (RMP)") +
+  theme_bw() + theme(legend.position="none") +
+  ggtitle("Escherichia")
+# species level
+RMP %>% ggplot(aes(Diagnosis, E_coli, fill=Diagnosis), group=Diagnosis) + 
+  geom_boxplot() + geom_jitter(width = 0.02) + 
+  scale_y_continuous(trans = "log10") + 
+  ylab("Relative Species Abundance (RMP)") +
+  theme_bw() + theme(legend.position="none") +
+  ggtitle("Escherichia coli")
 ```
 
 - then in QMP
 
 ```{r boxplots}
-# prevotella
+# prevotella QMP
 
-# e. coli
+# e. coli QMP
 
 ```
 
