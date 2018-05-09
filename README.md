@@ -8,9 +8,10 @@
   + [Select zipped HMP2 Pilot metagenome FASTQ raw files](https://ibdmdb.org/tunnel/public/HMP2_Pilot/WGS/1644/rawfiles)
   + [Zipped Bacterial 16S rRNA gene copy number data files](https://rrndb.umms.med.umich.edu/static/download/rrnDB-5.4_pantaxa_stats_RDP.tsv.zip)
 - Raw qPCR 16s DNA quantified in concentration data files from Casey DuLong, Tiffany Poon, and Jason Lloyd-Price are saved in `/data`.
-- Analysis-ready datasets are saved within the subdirectory `/data/derived`.
+  + Analysis-ready datasets are saved within the subdirectory `/data/derived`.
 - All relevant data visualization and statistical analysis results can be found under `/outputs`.
-- Any python, R, and mathematica program file/script used to derive data or produce outputs by any of the team member is compiled into `/programs`.
-- The main objective of this project is to compare our own variant of the novel QMP method proposed by [Vandeputte et al.](https://www.nature.com/articles/nature24460) to a standard relative profiling method widely used in the field by applying these methods on data collected and made publicly available by the HMP2 project, and from additional qPCR performed courtesy of [Curtis Huttenhower](https://huttenhower.sph.harvard.edu/) & colleagues named above from the [Broad Institute](https://www.broadinstitute.org/infectious-disease-microbiome).
+- Any python, R, and mathematica program file/script used to derive data or produce outputs by any of the team member is compiled under `/programs`.
+- The primary objective of this project is to compare our own variant of the novel QMP method proposed by [Vandeputte et al.](https://www.nature.com/articles/nature24460) to a standard relative profiling method widely used in the field by applying these methods on data collected and made publicly available by the HMP2 project, and from additional qPCR performed courtesy of [Curtis Huttenhower](https://huttenhower.sph.harvard.edu/) & colleagues named above from the [Broad Institute](https://www.broadinstitute.org/infectious-disease-microbiome).
+- A formal written final report of this project is coming soon - stay tuned.
 
 Hope you enjoy our project!
