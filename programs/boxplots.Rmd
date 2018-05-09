@@ -29,11 +29,11 @@ head(RMP, 44)
 - again, create the grouping variable for the diagnosis
 
 ```{r import-QMP}
-QMP_CD <- read.csv("../data/QMP/qmp4015final.csv", header=TRUE) %>% 
+QMP_CD <- read.csv("../data/derived/qmp4015final.csv", header=TRUE) %>% 
   select(X, P_copri = ends_with("s__Prevotella_copri"), E_coli = ends_with("s__Escherichia_coli")) %>% 
   mutate(Diagnosis = rep("H4015 (CD)"))
 
-QMP_con <- read.csv("../data/QMP/qmp4023final.csv", header=TRUE) %>% 
+QMP_con <- read.csv("../data/derived/qmp4023final.csv", header=TRUE) %>% 
   select(X, P_copri = ends_with("s__Prevotella_copri"), E_coli = ends_with("s__Escherichia_coli")) %>% 
   mutate(Diagnosis = rep("H4023 (Control)"))
 
