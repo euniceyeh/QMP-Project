@@ -1,0 +1,123 @@
+---
+title: "BST281 Final Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read in full metadata file containing all CD and nonIBD patients
+```{r loaddata, eval=TRUE}
+
+# load metadata
+metadata = read.table("hmp2_metadata_metagenomics_CD_nonIBD_subset.csv",fill=TRUE, comment.char="", check.names=FALSE, header = TRUE, sep=",", quote="\"")
+
+# load taxonomic profiles file
+taxadata = read.table("Metagenome/taxonomic_profiles.tsv",fill=TRUE, comment.char="", check.names=FALSE, header = TRUE, sep="", quote="\"")
+
+# subset metadata to only include IDs that are also in the taxonomic profiles file
+metadatataxa = subset(metadata, metadata$`External ID` %in% colnames(taxadata))
+
+# create separate files for CD and nonIBD
+CDdf = subset(metadata, diagnosis == "CD")
+nonIBDdf = subset(metadata, diagnosis == "nonIBD")
+```
+
+# Summary Statistics for All Metadata
+```{r sumstatsall, eval=TRUE}
+# variables of interest: age at diagnosis (for CD only), education level, consent age, Tea or coffee, alcohol, soft drinks tea or coffee with sugar, 2), 3), 4), 5), 6), general well-being, abdominal pain, number of liquid or very soft stools in the past 24 hours, hispanic or latino origin, did the subject withdraw from the study, was subject terminated by investigator, race, sex, fecalcal
+
+# subset dataframe to only include variables of interest
+metadatasub <- subset(metadatataxa, select=c('Project', 'External ID', 'Participant ID', 'week_num', 'Education Level', 'diagnosis', 'consent_age', 'Alcohol (beer, brandy, spirits, hard liquor, wine, aperitif, etc.)', 'race', 'sex', 'fecalcal', 'Abdominal pain', 'General wellbeing', 'Number of liquid or very soft stools in the past 24 hours:','Hispanic or Latino Origin', '2) In the past 2 weeks, have you undergone a colonoscopy or other procedure','4) In the past 2 weeks, have you had diarrhea?', '6) Have you ever had bowel surgery?'))
+
+# make certain variables numeric
+metadatasub$consent_age <- as.numeric(metadatasub$consent_age)
+metadatasub$fecalcal <- as.numeric(metadatasub$fecalcal)
+metadatasub[,14] <- as.numeric(metadatasub[,14])
+
+############
+# BASELINE #
+############
+
+# subset dataframe to only baseline values
+metadatabaseline <- subset(metadatasub, week_num == 0)
+
+# baseline characteristics
+
+# make a new dataframe with averaged values across subjects with multiple baseline values
+library(dplyr)
+metadatabaseline_unique <- summarise(group_by(metadatabaseline, metadatabaseline$`Participant ID`), diagnosis=unique(diagnosis), 'Education Level' = unique(`Education Level`), 'race' = unique(`race`), everhadbowelsurgery = unique(`6) Have you ever had bowel surgery?`), sex = unique(sex), consent_age = mean(consent_age, na.rm=TRUE), fecalcal = mean(fecalcal, na.rm=TRUE))
+
+# subset unique baseline dataframe to CD and non-IBD
+CDbase_unique <- subset(metadatabaseline_unique, diagnosis == "CD")
+nonIBDbase_unique <- subset(metadatabaseline_unique, diagnosis == "nonIBD")
+
+# age at consent
+library(plyr)
+
+baseage <- ddply(metadatabaseline_unique, ~diagnosis, summarise, mean=mean(consent_age, na.rm=TRUE), sd=sd(consent_age, na.rm=TRUE), length=length(consent_age[!is.na(consent_age)]), min=min(consent_age, na.rm=TRUE), max=max(consent_age, na.rm=TRUE))
+
+# wilcoxon rank sum test
+wilcox.test(CDbase_unique$consent_age, nonIBDbase_unique$consent_age, alternative = "two.sided")
+
+# fecalcal
+basefec <- ddply(metadatabaseline_unique, ~diagnosis, summarise, mean=mean(fecalcal, na.rm=TRUE), sd=sd(fecalcal, na.rm=TRUE), length=length(fecalcal[!is.na(fecalcal)]), min=min(fecalcal, na.rm=TRUE), max=max(fecalcal, na.rm=TRUE))
+
+# wilcoxon rank sum test
+wilcox.test(CDbase_unique$fecalcal, nonIBDbase_unique$fecalcal, alternative = "two.sided")
+
+# sex
+
+# proportion test
+prop.test(table(metadatabaseline_unique$diagnosis, metadatabaseline_unique$sex))
+
+basesex <- as.data.frame(table(metadatabaseline_unique$diagnosis, metadatabaseline_unique$sex))
+
+# education 
+educcattab <- matrix(c(table(CDbase_unique$`Education Level`),table(nonIBDbase_unique$`Education Level`)), byrow=TRUE, nrow=2)
+
+# remove unknown/not reported columns
+educcattab <- educcattab[,-c(1,9)]
+
+# chi-square goodness of fit test
+chisq.test(educcattab)
+
+baseeductation <- as.data.frame(table(metadatabaseline_unique$diagnosis, metadatabaseline_unique$`Education Level`))
+
+# race
+racecattab <- matrix(c(table(CDbase_unique$race),table(nonIBDbase_unique$race)), byrow=TRUE, nrow=2)
+racecattab = racecattab[,-1]
+
+# chi-square goodness of fit test
+chisq.test(racecattab)
+
+baserace <- as.data.frame(table(metadatabaseline_unique$diagnosis, metadatabaseline_unique$race))
+
+# bowel surgery
+
+# proportion test
+prop.test(table(metadatabaseline_unique$diagnosis, metadatabaseline_unique$everhadbowelsurgery)[,-1])
+
+basebowel <- as.data.frame(table(metadatabaseline_unique$diagnosis, metadatabaseline_unique$everhadbowelsurgery))
+```
+
+# Only Two Subjects
+```{r twosubs, eval=TRUE}
+# subset the dataframe to only include the two subjects of interest
+
+subjectlist = c('HSM67VDR_P','HSM6XRUL','HSM6XRUN','HSM6XRUR','HSM6XRQ8',
+                'HSM7CZ16','HSM7CZ18','HSM7CZ1A','HSM7CZ1C','HSM7CZ1E',
+                'HSM7CZ1G','HSM7J4HA','HSM7J4HC','HSM7J4HE','HSM7J4HG',
+                'HSM7J4HI','HSM7J4HK','HSM7J4KC','HSM7J4KG','HSM7J4KI',
+                'HSM7J4KK','HSM7J4KM','HSM5MD5X_P','HSM5MD62','HSM5MD6Y',
+                'HSM5MD71','HSM5MD73','HSM5MD75','HSM6XRS4','HSM6XRS6',
+                'HSM6XRS8','HSM6XRSE','HSM7CYZ5','HSM7CYZ7','HSM7CYZ9',
+                'HSM7CYZB','HSM7CYZD','HSM7CYZF','HSM7J4QB','HSM7J4QD',
+                'HSM7J4QF','HSM7J4QH','HSM7J4QJ','HSM7J4QL')
+
+subjectallmeta = subset(metadatasub, metadatataxa$`External ID` %in% subjectlist)
+
+
+
+```

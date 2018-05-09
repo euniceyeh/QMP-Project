@@ -19,7 +19,7 @@ library(tidyverse)
 RMP <- read.table(file = "../data/derived/transposed_data_subset_genus_or_species_level.tsv", sep = '\t', header = TRUE) %>% 
   select(X, Prevotella = ends_with("g__Prevotella"), Escherichia = ends_with("g__Escherichia"),     # genus level
             P_copri = ends_with("s__Prevotella_copri"), E_coli = ends_with("s__Escherichia_coli")) %>% # species level
-  mutate(Diagnosis = c(rep("Control",22),rep("CD",22))) # the first 22 samples are for H4023 (control), rest are for H4015 (CD)
+  mutate(Diagnosis = c(rep("H4023 (Control)",22),rep("H4015 (CD)",22))) # the first 22 samples are for H4023 (control), rest are for H4015 (CD)
 head(RMP, 44)
 ```
 
@@ -28,12 +28,24 @@ head(RMP, 44)
 - subset to the same two specific bacteria of interest
 - again, create the grouping variable for the diagnosis
 
+```{r import-QMP}
+QMP_CD <- read.csv("../data/QMP/qmp4015final.csv", header=TRUE) %>% 
+  select(X, P_copri = ends_with("s__Prevotella_copri"), E_coli = ends_with("s__Escherichia_coli")) %>% 
+  mutate(Diagnosis = rep("H4015 (CD)"))
+
+QMP_con <- read.csv("../data/QMP/qmp4023final.csv", header=TRUE) %>% 
+  select(X, P_copri = ends_with("s__Prevotella_copri"), E_coli = ends_with("s__Escherichia_coli")) %>% 
+  mutate(Diagnosis = rep("H4023 (Control)"))
+
+QMP <- bind_rows(QMP_CD, QMP_con) # combine the two QMP datasets into one
+```
+
 
 ## Boxplot by health state for each bacteria in RMP vs. QMP
 
 - first in RMP
 
-```{r boxplots}
+```{r RMP-pcopri-boxplots}
 # prevotella RMP
 # genus level
 RMP %>% ggplot(aes(Diagnosis, Prevotella, fill=Diagnosis), group=Diagnosis) + 
@@ -51,7 +63,7 @@ RMP %>% ggplot(aes(Diagnosis, P_copri, fill=Diagnosis), group=Diagnosis) +
   ggtitle("Prevotella copri")
 ```
 
-```{r}
+```{r RMP-ecoli-boxplots}
 # e. coli RMP
 # genus level
 RMP %>% ggplot(aes(Diagnosis, Escherichia, fill=Diagnosis), group=Diagnosis) + 
@@ -69,12 +81,26 @@ RMP %>% ggplot(aes(Diagnosis, E_coli, fill=Diagnosis), group=Diagnosis) +
   ggtitle("Escherichia coli")
 ```
 
-- then in QMP
+- then in QMP (only focusing on species level)
 
-```{r boxplots}
-# prevotella QMP
+```{r QMP-boxplots}
+# prevotella copri QMP
+QMP %>% ggplot(aes(Diagnosis, P_copri, fill=Diagnosis), group=Diagnosis) + 
+  geom_boxplot() + geom_jitter(width = 0.02) + 
+  scale_y_continuous(trans = "log10") + 
+  ylab("Quantitative Species Abundance (QMP, ng/uL)") +
+  theme_bw() + theme(legend.position="none") +
+  ggtitle("Prevotella copri")
 
 # e. coli QMP
+QMP %>% ggplot(aes(Diagnosis, E_coli, fill=Diagnosis), group=Diagnosis) + 
+  geom_boxplot() + geom_jitter(width = 0.02) + 
+  scale_y_continuous(trans = "log10") + 
+  ylab("Quantitative Species Abundance (QMP, ng/uL)") +
+  theme_bw() + theme(legend.position="none") +
+  ggtitle("Escherichia coli")
 
 ```
+
+- Saving images 500 x 500 for presentation
 

@@ -1,0 +1,114 @@
+---
+title: "Statistical Computation"
+author: "Eunice Yeh"
+date: "April 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Is RMP a good measure of microbial abundance?
+The RMP approach is only appropriate if we can show that sequencing depth truly reflects the total microbial concentration of a sample. We can assess this relationship between the number of sequenced reads derived from the FASTQ raw files and the stool 16S DNA quantified in concentration (ng/uL) normalized to one copy number variation across all samples in an individual by formally testing for Spearman's correlation as shown below.
+
+#### CD Patient (H4015)
+```{r}
+
+# import number of sequenced reads and qPCR quant concentration
+
+read_counts_4015 <- read.csv("../data/derived/read_counts_cal_4015.csv", header = TRUE) %>% rename(Read = Counts, normQuant = cal)
+
+# calculate correlation between the two columns: read vs quant
+
+cor.test( ~ Read + normQuant,
+          data=read_counts_4015,
+          method = "spearman",
+          continuity = FALSE,
+          conf.level = 0.95)
+```
+
+We have insufficient evidence to conclude that the sequencing depth is associated with the microbial sample concentration, therefore we can't say that RMP is a good measure for microbial abundance. This justifies us to move forward with the QMP approach that accounts for the varying microbial concentrations across samples.
+
+#### Healthy Control, aka non-IBD (H4023)
+
+```{r}
+read_counts_4023 <- read.csv("../data/derived/read_counts_cal_4023.csv", header = TRUE) %>% rename(Read = Counts, normQuant = cal)
+
+cor.test( ~ Read + normQuant,
+          data=read_counts_4023,
+          method = "spearman",
+          continuity = FALSE,
+          conf.level = 0.95)
+```
+
+Again, we fail to find a statistical significant correlation between the number of sequenced reads and microbial concetration across samples from a healthy control. We can now move forward with the QMP approach for both individuals.
+
+## But are the two individuals (H4015 and H4023) just anomalies from the rest of the HMP2 study cohorts?
+Although we hand-picked with Curtis the two patients that had the most apparent varying abundances of certain bacterial species of interest (E.coli and P.copri), we want to show that the abundances of these two particular species are actually still very distinct between the rest of the CD patients and the rest of the healthy controls (non-IBD patients).
+
+#### Two-way ANOVA: Diagnosis (CD patients vs. healthy controls) and patient IDs (for repeated measures)
+
+```{r}
+# first import RMP for all CD patients
+RMP_CD <- read.table(file = "../data/derived/taxonomic_profiles_metagenomics_CD_subset_week_num_participant_id_transposed.tsv", sep = '\t', header = TRUE) %>%
+  dplyr::select(X, wk = week_num, pid = Participant_ID,
+         P_copri = ends_with("s__Prevotella_copri"), E_coli = ends_with("s__Escherichia_coli")) %>%
+  mutate(Diagnosis = rep("CD")) # all are CD
+
+# then import RMP for all controls
+RMP_con <- read.table(file = "../data/derived/taxonomic_profiles_metagenomics_nonIBD_subset_week_num_participant_id_transposed.tsv", sep = '\t', header = TRUE) %>%
+  dplyr::select(X, wk = week_num, pid = Participant_ID,
+         P_copri = ends_with("s__Prevotella_copri"), E_coli = ends_with("s__Escherichia_coli")) %>%
+  mutate(Diagnosis = rep("Control")) # all are controls
+
+# combine the two RMP datasets into one and log10-transform the RMP values to normalize the distribution
+RMP_all <- bind_rows(RMP_CD, RMP_con) %>% mutate(P_copri_log = log10(P_copri), E_coli_log = log10(E_coli))
+
+# we can assess the effect of diagnosis on the specific RMP of E.coli and P.copri separately using two way anovas
+aov_pcopri_log <- RMP_all %>% filter(!is.infinite(P_copri_log)) %>% aov(P_copri_log ~ Diagnosis + pid, data = .)
+aov_ecoli_log <- RMP_all %>% filter(!is.infinite(E_coli_log)) %>% aov(E_coli_log ~ Diagnosis + pid, data = .)
+summary(aov_pcopri_log)
+summary(aov_ecoli_log)
+```
+
+The above results show statistically significant difference in log10-transformed RMP between the diagnosis for both P.copri and E.coli, adjusted for patient IDs to account for the repeated samples within individuals over time. The following code is just making sure that our log-transformation helped satisfy the test assumptions.
+
+```{r}
+# check the homogeneity of variances
+plot(aov_pcopri_log, 1)
+plot(aov_ecoli_log, 1)
+
+# check normality assumption with qq plot
+plot(aov_pcopri_log, 2)
+plot(aov_ecoli_log, 2)
+
+# Run Shapiro-Wilk test on residuals to statistically support the normality assumption
+shapiro.test(x = residuals(object = aov_pcopri_log))
+shapiro.test(x = residuals(object = aov_ecoli_log))
+
+```
+
+#### Visualization: box plots
+
+```{r}
+# P.copri
+RMP_all %>% ggplot(aes(Diagnosis, P_copri, fill=Diagnosis), group=Diagnosis) +
+  geom_boxplot() + geom_jitter(width = 0.02) +
+  scale_y_continuous(trans = "log10") +
+  ylab("Relative Species Abundance (RMP)") +
+  theme_bw() + theme(legend.position="none") +
+  ggtitle("Prevotella copri")
+
+
+# E.coli
+RMP_all %>% ggplot(aes(Diagnosis, E_coli, fill=Diagnosis), group=Diagnosis) +
+  geom_boxplot() + geom_jitter(width = 0.02) +
+  scale_y_continuous(trans = "log10") +
+  ylab("Relative Species Abundance (RMP)") +
+  theme_bw() + theme(legend.position="none") +
+  ggtitle("Escherichia coli")
+
+```
+
